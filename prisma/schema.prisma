@@ -1,0 +1,145 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================================
+// 1. RIGHTS : สิทธิ์การรักษา
+// =====================================================
+model Right {
+  rightId   Int       @id @default(autoincrement()) @map("right_id")
+  rightName String    @map("right_name") @db.VarChar(100)
+  status    String    @db.VarChar(20)
+  startDate DateTime? @map("start_date") @db.Date
+  endDate   DateTime? @map("end_date") @db.Date
+
+  users     User[]
+
+  @@map("rights")
+}
+
+// =====================================================
+// 2. USERS : ข้อมูลผู้ใช้บริการ
+// =====================================================
+model User {
+  userId    Int      @id @default(autoincrement()) @map("user_id")
+  citizenId String   @unique @map("citizen_id") @db.VarChar(13)
+  name      String   @db.VarChar(100)
+  gender    String   @db.VarChar(20)
+  birthDate DateTime @map("birth_date") @db.Date
+  phone     String?  @db.VarChar(15)
+  address   String?
+  rightId   Int      @map("right_id")
+
+  // ความสัมพันธ์
+  right          Right            @relation(fields: [rightId], references: [rightId])
+  medicalHistory MedicalHistory[]
+  treatments     Treatment[]
+
+  @@map("users")
+}
+
+// =====================================================
+// 3. MEDICAL_HISTORY : ประวัติสุขภาพ
+// =====================================================
+model MedicalHistory {
+  historyId      Int     @id @default(autoincrement()) @map("history_id")
+  userId         Int     @map("user_id")
+  drugAllergy    String? @map("drug_allergy")
+  chronicDisease String? @map("chronic_disease")
+  otherHistory   String? @map("other_history")
+
+  // ความสัมพันธ์
+  user User @relation(fields: [userId], references: [userId])
+
+  @@map("medical_history")
+}
+
+// =====================================================
+// 4. DOCTORS : ข้อมูลแพทย์ที่ปรึกษา
+// =====================================================
+model Doctor {
+  doctorId   Int         @id @default(autoincrement()) @map("doctor_id")
+  doctorName String      @map("doctor_name") @db.VarChar(100)
+  specialty  String?     @db.VarChar(100)
+  phone      String?     @db.VarChar(15)
+
+  // ความสัมพันธ์
+  treatments Treatment[]
+
+  @@map("doctors")
+}
+
+// =====================================================
+// 5. TREATMENTS : การรักษาและผลการวินิจฉัย
+// =====================================================
+model Treatment {
+  treatmentId   Int      @id @default(autoincrement()) @map("treatment_id")
+  userId        Int      @map("user_id")
+  doctorId      Int      @map("doctor_id")
+  symptom       String
+  diagnosis     String
+  treatmentDate DateTime @map("treatment_date") @db.Date
+
+  // ความสัมพันธ์
+  user          User           @relation(fields: [userId], references: [userId])
+  doctor        Doctor         @relation(fields: [doctorId], references: [doctorId])
+  prescriptions Prescription[]
+
+  @@map("treatments")
+}
+
+// =====================================================
+// 6. PRESCRIPTIONS : ใบสั่งยา
+// =====================================================
+model Prescription {
+  prescriptionId   Int      @id @default(autoincrement()) @map("prescription_id")
+  treatmentId      Int      @map("treatment_id")
+  prescriptionDate DateTime @map("prescription_date") @db.Date
+
+  // ความสัมพันธ์
+  treatment          Treatment          @relation(fields: [treatmentId], references: [treatmentId])
+  prescriptionItems  PrescriptionItem[]
+  medicineDeliveries MedicineDelivery[]
+
+  @@map("prescriptions")
+}
+
+// =====================================================
+// 7. PRESCRIPTION_ITEMS : รายการยาในใบสั่งยา (Weak Entity)
+// =====================================================
+model PrescriptionItem {
+  prescriptionId   Int     @map("prescription_id")
+  medicineName     String  @map("medicine_name") @db.VarChar(100)
+  quantity         Int
+  usageInstruction String? @map("usage_instruction")
+
+  // ความสัมพันธ์ (ตั้งค่า onDelete: Cascade เหมือนใน SQL)
+  prescription Prescription @relation(fields: [prescriptionId], references: [prescriptionId], onDelete: Cascade)
+
+  // Composite Primary Key
+  @@id([prescriptionId, medicineName])
+  @@map("prescription_items")
+}
+
+// =====================================================
+// 8. MEDICINE_DELIVERY : การส่งยาและติดตามพัสดุ
+// =====================================================
+model MedicineDelivery {
+  deliveryId      Int       @id @default(autoincrement()) @map("delivery_id")
+  prescriptionId  Int       @map("prescription_id")
+  deliveryAddress String    @map("delivery_address")
+  deliveryDate    DateTime? @map("delivery_date") @db.Date
+  trackingNumber  String?   @map("tracking_number") @db.VarChar(50)
+  carrier         String?   @db.VarChar(50)
+  deliveryStatus  String?   @map("delivery_status") @db.VarChar(50)
+
+  // ความสัมพันธ์
+  prescription Prescription @relation(fields: [prescriptionId], references: [prescriptionId])
+
+  @@map("medicine_delivery")
+}

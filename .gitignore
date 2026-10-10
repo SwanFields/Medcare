@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Environment Variables (ข้อมูลลับ เช่น Database URL)
+.env
+.env.local
+.env.*.local
+
+# Build & Output Directories
+dist/
+build/
+*.tsbuildinfo
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Prisma (ไฟล์ฐานข้อมูล SQLite สำรอง/Temporary)
+prisma/*.db
+prisma/*.db-journal
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# IDE & Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
